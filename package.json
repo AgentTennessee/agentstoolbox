@@ -1,0 +1,27 @@
+{
+  "name": "AgentsToolbox",
+  "version": "0.0.1",
+  "description": "Does what Agent wants it to",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^5.4.3",
+    "discord.js": "^11.5.1",
+    "express": "^4.17.1",
+    "node-gyp": "^5.0.3"
+  },
+  "engines": {
+    "node": "8.4.0"
+  },
+  "repository": {
+    "url": "https://glitch.com/edit/#!/agenttb"
+  },
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "glitch",
+    "express"
+  ]
+}
