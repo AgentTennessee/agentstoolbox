@@ -34,13 +34,13 @@ client.on("ready", () => {
   const table = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'questions';").get();
   if (!table['count(*)']) {
     // If the table isn't there, create it and setup the database correctly.
-    sql.prepare("CREATE TABLE questions (id TEXT PRIMARY KEY, user TEXT, channel TEXT, question TEXT, date TEXT, used INTEGER);").run();
+    sql.prepare("CREATE TABLE questions (id TEXT PRIMARY KEY, user TEXT, channel TEXT, question TEXT, date TEXT, approved INTEGER);").run();
     // Ensure that the "id" row is always unique and indexed.
     sql.prepare("CREATE UNIQUE INDEX idx_questions_id ON questions (id);").run();
     sql.pragma("synchronous = 1");
     sql.pragma("journal_mode = wal");
   }
-  client.addQuestion = sql.prepare("INSERT OR REPLACE INTO questions (id,user,channel,question,date,used) VALUES(@id, @user, @channel, @question, @date, @used)");
+  client.addQuestion = sql.prepare("INSERT OR REPLACE INTO questions (id,user,channel,question,date,used) VALUES(@id, @user, @channel, @question, @date, @approved)");
 
   //logs in glitch's console that it's ready
   console.log("I am ready!");
@@ -77,6 +77,10 @@ if(command ==="suggest"){
     //If you don't have anything after the channel mention it will stop you
   if(args.length>2){
     //Make a copy of the array to get the actual suggestion without breaking references to the original array below
+    var approveCheck = 0;
+    if(message.member.hasPermission('MANAGE_MESSAGES')){
+      approveCheck = 1;
+    }
     const suggestArray = [...args];
     suggestArray.shift();
     const suggestion = suggestArray.join(" ");
@@ -86,7 +90,7 @@ if(command ==="suggest"){
       channel:getChannelFromMention(args[0]).id,
       question:suggestion,
       date:message.createdAt.toString(),
-      used:0
+      approved:approveCheck
     }
     console.log(message.guild.members.get(newquestion.user).displayName + " Asked: " + newquestion.question + " in " + client.channels.get(newquestion.channel).name + " at " + newquestion.date);
     client.addQuestion.run(newquestion);
@@ -102,7 +106,7 @@ if(command ==="suggest"){
   
 if(command === "random"){
   if(args.length<1){
-    const rq = sql.prepare("SELECT * FROM questions ORDER BY RANDOM() LIMIT 1;").get();
+    const rq = sql.prepare("SELECT * FROM questions WHERE approved = 1 ORDER BY RANDOM() LIMIT 1;").get();
     if(rq){
     const questionembed = new Discord.RichEmbed()
       .setTitle("Question of the Day!")
@@ -118,7 +122,36 @@ if(command === "random"){
       message.channel.send("There was no question to send, suggest more!");
     }
   }
-
+if(command === "waitlist"){
+  const notApproved = sql.prepare("SELECT * FROM questions WHERE approved = 0 ORDER BY date LIMIT 10").get();
+  const questionsEmbed = new Discord.RichEmbed()
+  .setTitle("Unapproved QOTDs")
+  .setAuthor(client.user.username,client.user.avatarURL)
+  .setDescription("Approve or deny QOTDs by typing q!approve/deny id")
+  .setColor("RANDOM");
+  for(const data of notApproved){
+    questionsEmbed.addField(message.guild.get(data.user) +"Channel: "+ data.channel + " ID:"+data.id, data.question);
+  
+  }
+  message.channel.send(notApproved);
+}
+if(command === "approve"){
+  if(args.length==1){
+    if(!isNaN(args[0])){
+       const qrow = sql.prepare("SELECT * FROM questions WHERE id = ? LIMIT 1").get(args[0]); 
+      
+       }
+    
+  }
+}
+if(command === "deny"){
+  if(args.length==1){
+    if(!isNaN(args[0])){
+       
+       }
+    
+  }
+}
 }
 
 function getChannelFromMention(mention) {
@@ -136,4 +169,4 @@ function getChannelFromMention(mention) {
 });
 
 //This lets discord know that you're authorized to use the bot you made on discord's page by inputting the token you got from them.
-client.login(process.env.TOKEN);
+//client.login(process.env.TOKEN);
